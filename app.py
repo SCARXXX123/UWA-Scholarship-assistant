@@ -47,7 +47,7 @@ with st.sidebar:
     st.divider()
     st.caption("AI 建议仅供参考，具体请以官网为准。")
 
-st.title("🎓 UWA 奖学金智能匹配系统")
+st.title("🎓 UWA 奖学金智能助手/UWA Scholarship Assistant")
 st.markdown("---")
 
 # 创建两个标签页
@@ -82,8 +82,8 @@ with tab1:
             
             # 增加垂直高度，满足你对“竖着长”的要求
             user_query = st.text_area(
-                "补充信息 (详细背景描述)", 
-                placeholder="在此输入您的 GPA、原籍国、科研经历、特长等...",
+                "补充信息 (详细背景描述)/Background Details", 
+                placeholder="在此输入您的 GPA、原籍国、科研经历、特长等.../Enter your GPA,nationality,research experience,habit...",
                 height=450  # 极长的垂直空间
             )
 
@@ -137,9 +137,9 @@ with tab1:
                         for _, row in match_ext.iterrows():
                             st.markdown(f"- **[{row['Title']}]({row['Link']})**")
 
-# --- Tab 2: 全部索引 (补回来了！) ---
+# --- Tab 2: 全部索引 ---
 with tab2:
-    st.subheader("📋 UWA 奖学金数据库全清单")
+    st.subheader("📋 UWA 奖学金数据库全清单/All Scholarships")
     
     # 顶部的搜索框
     search_all = st.text_input("🔍 在全库中搜索 (如：Global, Master, Engineering...)", "")

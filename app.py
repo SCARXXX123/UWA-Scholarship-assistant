@@ -106,7 +106,7 @@ with tab1:
                     你的用户身份是：{intl_status}，学历：{level}，学院：{faculty}，专业：{major}。
                     
                     你的核心任务：
-                    1. 优先搜索不卡专业学院的奖学金：忽略名字里的限制，优先看内容是否提到 "all disciplines" 或 "International Student Award"。绝对不能因为用户填了{major}和{faculty}就忽略掉这些普适性大奖。
+                    1. 优先搜索不限制专业学院的奖学金：忽略名字里的限制，优先看内容是否提到 "all disciplines" 或 "International Student Award"。绝对不能因为用户填了{major}和{faculty}就忽略掉这些普适性大奖。
                     2.根据用户给出的{faculty}和{major}寻找有无专门给这个专业或学院的学生的奖学金。
                     3. 外部链接模糊比对：对于标记为 'External Link Only' 的项目，即便没有详情，也要根据标题进行联想。例如标题带 'Engineering'，而用户专业是 {major}，则必须告知用户：“这个链接看起来高度相关，建议官网确认。”
                     4. 针对高GPA的关怀：如果用户提到 GPA/WAM > 80，必须主动提及 UWA 经典的 "Global Excellence Scholarship"，解释其自动发放的机制。

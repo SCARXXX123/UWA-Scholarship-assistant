@@ -2,7 +2,7 @@ name: Daily Scraper Update
 
 on:
   schedule:
-    - cron: '0 18 * * *'  # 北京时间凌晨 2 点
+    - cron: '0 18 * * 0'  # 北京时间凌晨 2 点 每周一次更新
   workflow_dispatch:      # 允许手动运行
 
 jobs:

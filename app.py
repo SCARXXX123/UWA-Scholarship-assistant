@@ -83,56 +83,53 @@ with tab1:
         result_container = st.empty()
         if run_btn:
             with result_container.container():
-                with st.spinner(texts["scanning"]):
-                    # --- 【核心逻辑改进】 ---
-                    # 1. 匹配专业或学院的项目
-                    spec_match = df[df['Content_For_AI'].str.contains(f"{major}|{faculty}", case=False, na=False)]
-                    # 2. 匹配“不限专业”的通用项目
-                    gen_keywords = "any field|all disciplines|all courses|all faculties|any course|not restricted"
-                    gen_match = df[df['Content_For_AI'].str.contains(gen_keywords, case=False, na=False)]
-                    
-                    # 合并并去重，取前 30 条以确保覆盖面
-                    combined_df = pd.concat([spec_match, gen_match]).drop_duplicates().head(30)
-                    
-                    all_data_text = ""
-                    for i, row in combined_df.iterrows():
-                        all_data_text += f"--- [ID:{i}] {row['Title']} ---\nContent: {row['Content_For_AI']}\nLink: {row['Link']}\n\n"
+                    # --- 【真正的全量放权：拒绝抽样】 ---
+                    with st.spinner(texts["scanning"]):
+                        # 1. 提取全量数据
+                        # 如果你的 CSV 很大（上千行），AI 处理会慢；但如果是 UWA 这种几百行的，直接梭哈！
+                        all_items = df.copy() 
+                        
+                        all_data_text = ""
+                        for i, row in all_items.iterrows():
+                            # 标注外部链接，让 AI 知道哪些需要它模糊匹配
+                            ext_tag = "[External Link]" if row.get('is_external', False) else ""
+                            all_data_text += f"--- {ext_tag} ID:{i} {row['Title']} ---\nContent: {row['Content_For_AI']}\nLink: {row['Link']}\n\n"
 
-                    # --- 更加锐利的 Prompt ---
-                    target_lang = st.session_state.lang
-                    system_prompt = f"""
-                    你是一名在西澳大学(UWA)负责奖学金审核的首席顾问。请用{target_lang}回复。
-                    
-                    你的用户身份是：{intl_status}，学历：{level}，学院：{faculty}，专业：{major}。
-                    
-                    你的核心任务：
-                    1. 优先搜索不限制专业学院的奖学金：忽略名字里的限制，优先看内容是否提到 "all disciplines" 或 "International Student Award"。绝对不能因为用户填了{major}和{faculty}就忽略掉这些普适性大奖。
-                    2.根据用户给出的{faculty}和{major}寻找有无专门给这个专业或学院的学生的奖学金。
-                    3. 外部链接模糊比对：对于标记为 'External Link Only' 的项目，即便没有详情，也要根据标题进行联想。例如标题带 'Engineering'，而用户专业是 {major}，则必须告知用户：“这个链接看起来高度相关，建议官网确认。”
-                    4. 针对高GPA的关怀：如果用户提到 GPA/WAM > 80，必须主动提及 UWA 经典的 "Global Excellence Scholarship"，解释其自动发放的机制。
-                    5. 区分“当下申请”与“未来关注”：Close 的项目也要查询，只要符合要求就列出，作为明年或下学期的目标。
-                    6. 诚实告知不符项：若无完全匹配，解释是因为身份、学历还是专业限制。
-                    
-                    
-                    输出模版：
-                    🔥 **核心匹配结果 (The Verdict)** - 符合就推，不符合就直说，别磨叽。
-                    🔍 **背景硬伤分析 (Reality Check)** - 为什么这波数据里有些项目你申请不了？
-                    🔗 **外部链接指路 (External Leads)** - 哪怕没有完美匹配，也要给用户 1-2 个官网方向。
-                    💡 **给高分学霸的特别建议** - 针对 GPA 表现给出的具体申奖策略。
+                        # --- 你钦定的硬核 Prompt (一字不差) ---
+                        target_lang = st.session_state.lang
+                        system_prompt = f"""
+                        你是一名在西澳大学(UWA)负责奖学金审核的首席顾问。请用{target_lang}回复。
+
+                        你的用户身份是：{intl_status}，学历：{level}，学院：{faculty}，专业：{major}。
+                        
+                        你的核心任务：
+                        1. 优先搜索不限制专业学院的奖学金：忽略名字里的限制，优先看内容是否提到 "all disciplines" 或 "International Student Award"。绝对不能因为用户填了{major}和{faculty}就忽略掉这些普适性大奖。
+                        2. 根据用户给出的{faculty}和{major}寻找有无专门给这个专业或学院的学生的奖学金。
+                        3. 外部链接模糊比对：对于标记为 'External Link Only' 的项目，即便没有详情，也要根据标题进行联想。例如标题带 'Engineering'，而用户专业是 {major}，则必须告知用户：“这个链接看起来高度相关，建议官网确认。”
+                        4. 针对高GPA的关怀：如果用户提到 GPA/WAM > 80，必须主动提及 UWA 经典的 "Global Excellence Scholarship"，解释其自动发放的机制。
+                        5. 区分“当下申请”与“未来关注”：Close 的项目也要查询，只要符合要求就列出，作为明年或下学期的目标。
+                        6. 诚实告知不符项：若无完全匹配，解释是因为身份、学历还是专业限制。
+                        
+                        输出模版：
+                        🔥 **核心匹配结果 (The Verdict)** - 符合就推，不符合就直说，别磨叽。
+                        🔍 **背景硬伤分析 (Reality Check)** - 为什么这波数据里有些项目你申请不了？
+                        🔗 **外部链接指路 (External Leads)** - 哪怕没有完美匹配，也要给用户 1-2 个官网方向。
+                        💡 **给高分学霸的特别建议** - 针对 GPA 表现给出的具体申奖策略。
                     """
-                    try:
-                        response = client.chat.completions.create(
-                            model="deepseek-chat",
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": f"背景: {level}, 学院: {faculty}, 专业: {major}, 身份: {intl_status}\n额外信息: {user_query}\n\n候选池:\n{all_data_text}"}
-                            ]
-                        )
-                        st.markdown(response.choices[0].message.content)
-                        with st.expander("🔗 原始参考列表"):
-                            st.table(combined_df[['Title', 'Link']])
-                    except Exception as e:
-                        st.error(f"AI Error: {e}")
+                        try:
+                            # 2. 喂给 AI 全量文本
+                            response = client.chat.completions.create(
+                                model="deepseek-chat", # 也可以用 deepseek-reasoner 效果更硬核
+                                messages=[
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": f"用户详情: {level}, {faculty}, {major}, {intl_status}\n详细描述: {user_query}\n\n全量数据库内容如下：\n{all_data_text}"}
+                                ]
+                            )
+                            # 3. 渲染结果
+                            st.markdown(response.choices[0].message.content)
+                            
+                        except Exception as e:
+                            st.error(f"AI 调用出错了，可能是数据量太大导致超限: {e}")
 
 with tab2:
     st.subheader(texts["db_title"])

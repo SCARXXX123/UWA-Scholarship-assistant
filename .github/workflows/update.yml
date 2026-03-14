@@ -23,7 +23,7 @@ jobs:
           playwright install chromium
 
       - name: Run Scraper
-        run: python scraper.py  # 确保你的爬虫文件名是 scraper.py
+        run: python Scraper_for_UWA.py  # 确保你的爬虫文件名是 scraper.py
 
       - name: Commit and Push changes
         run: |

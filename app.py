@@ -119,7 +119,7 @@ with tab1:
                     🔍 **背景硬伤分析 (Reality Check)** - 为什么这波数据里有些项目你申请不了？
                     🔗 **外部链接指路 (External Leads)** - 哪怕没有完美匹配，也要给用户 1-2 个官网方向。
                     💡 **给高分学霸的特别建议** - 针对 GPA 表现给出的具体申奖策略。
-
+                    """
                     try:
                         response = client.chat.completions.create(
                             model="deepseek-chat",

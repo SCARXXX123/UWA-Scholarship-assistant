@@ -11,8 +11,7 @@ if not api_key:
 
 client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 
-# ================= 2. 数据处理与定时刷新 =================
-# 计算北京时间周数，确保每周一早上自动重载
+# ================= 2. 数据处理逻辑 =================
 now_bj = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
 current_week_key = now_bj.strftime("%Y-W%W")
 
@@ -22,11 +21,10 @@ def load_data(week_key):
         if not os.path.exists("uwa_for_ai_analysis.csv"):
             return pd.DataFrame()
         df = pd.read_csv("uwa_for_ai_analysis.csv")
-        # 标记外部链接或爬取失败的项目
         df['is_external'] = df['Content_For_AI'].str.contains("EXTERNAL|LOAD_FAILED|SPECIAL", na=False)
         return df
     except Exception as e:
-        st.error(f"加载数据库失败: {e}")
+        st.error(f"Error loading database: {e}")
         return pd.DataFrame()
 
 # ================= 3. UI 界面设计 =================
@@ -34,131 +32,144 @@ st.set_page_config(page_title="UWA Scholarship AI", page_icon="🎓", layout="wi
 
 df = load_data(current_week_key)
 
+# --- 语言切换逻辑 ---
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'English'
+
+def toggle_lang():
+    st.session_state.lang = 'Chinese' if st.session_state.lang == 'English' else 'English'
+
 # --- 侧边栏 ---
 with st.sidebar:
-    st.title("⚙️ 系统信息")
-    if not df.empty and os.path.exists("uwa_for_ai_analysis.csv"):
-        mtime = os.path.getmtime("uwa_for_ai_analysis.csv")
-        last_update = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
-        st.success(f"📅 同步周期: {current_week_key}")
-        st.info(f"📄 数据更新于:\n{last_update}")
-    else:
-        st.error("❌ 未发现数据文件")
+    st.title("⚙️ System / 系统")
+    st.button("🌐 Switch Language / 切换语言", on_click=toggle_lang)
+    curr_l = st.session_state.lang
+    
+    st.write(f"**Current Language:** {curr_l}")
+    if not df.empty:
+        st.success("✅ Database Connected")
+        st.caption(f"Sync Week: {current_week_key}")
     st.divider()
-    st.caption("AI 建议仅供参考，具体请以官网为准。")
+    st.caption("AI suggestions are for reference only. Please verify on the official UWA website.")
 
-st.title("🎓 UWA 奖学金智能助手/UWA Scholarship Assistant")
+# --- 标题动态化 ---
+main_title = "🎓 UWA Scholarship Assistant" if curr_l == 'English' else "🎓 UWA 奖学金智能助手"
+st.title(main_title)
 st.markdown("---")
 
-# 创建两个标签页
-tab1, tab2 = st.tabs(["🔍 AI 智能匹配建议", "🌐 全部奖学金索引"])
+tab_names = ["🔍 AI Matching", "🌐 Full Index"] if curr_l == 'English' else ["🔍 AI 智能匹配", "🌐 全部索引"]
+tab1, tab2 = st.tabs(tab_names)
 
-# --- Tab 1: AI 智能匹配 (侧边长条布局) ---
+# --- Tab 1: AI 智能匹配 ---
 with tab1:
     if df.empty:
-        st.warning("⚠️ 数据库为空，请检查爬虫任务。")
+        st.warning("Database is empty. Please check GitHub Actions.")
     else:
-        # 比例 [1.2, 2] 让左侧有足够的宽度延伸，同时右侧显示结果更宽敞
         col_input, col_res = st.columns([1.2, 2]) 
 
         with col_input:
-            st.subheader("👤 您的个人背景")
+            st.subheader("👤 Background" if curr_l == 'English' else "👤 个人背景")
             
-            level = st.selectbox("学习阶段", [
-                "Undergraduate (本科)", 
-                "Postgraduate (授课型硕士)", 
-                "HDR (博士/研究型硕士)"
-            ])
+            level = st.selectbox(
+                "Study Level / 学习阶段", 
+                ["Undergraduate", "Postgraduate (Coursework)", "HDR (PhD/Research)"]
+            )
+            major = st.text_input("Major Keywords / 专业关键词", value="Information Technology")
+            is_intl = st.checkbox("International Student / 国际学生", value=True)
             
-            st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-            
-            major = st.text_input("专业关键词", value="Information Technology")
-            
-            st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-            
-            is_intl = st.checkbox("我是国际学生 (International Student)", value=True)
-            
-            st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-            
-            # 增加垂直高度，满足你对“竖着长”的要求
             user_query = st.text_area(
-                "补充信息 (详细背景描述)/Background Details", 
-                placeholder="在此输入您的 GPA、原籍国、科研经历、特长等.../Enter your GPA,nationality,research experience,habit...",
-                height=450  # 极长的垂直空间
+                "Details (GPA, Origin, Exp...) / 详细背景描述", 
+                placeholder="Type here...",
+                height=400 
             )
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            run_btn = st.button("开始 AI 智能匹配", type="primary", use_container_width=True)
+            run_btn_text = "Match Now" if curr_l == 'English' else "开始匹配"
+            run_btn = st.button(run_btn_text, type="primary", use_container_width=True)
 
         with col_res:
+            result_container = st.empty()
+            
             if run_btn:
-                with st.spinner("🤖 AI 正在分析..."):
-                    normal_df = df[~df['is_external']]
-                    external_df = df[df['is_external']]
+                with result_container.container():
+                    with st.spinner("Analyzing..." if curr_l == 'English' else "正在分析..."):
+                        normal_df = df[~df['is_external']]
+                        external_df = df[df['is_external']]
 
-                    # 匹配逻辑
-                    match_normal = normal_df[
-                        normal_df['Content_For_AI'].str.contains(major, case=False, na=False) | 
-                        normal_df['Title'].str.contains(major, case=False, na=False)
-                    ]
-                    
-                    if match_normal.empty:
-                        # 没搜到专业，用国际生通用奖学金保底
-                        match_normal = normal_df[normal_df['Content_For_AI'].str.contains("International", case=False, na=False)].head(5)
-                        st.info("💡 暂无直接匹配专业，为您推荐通用奖学金：")
-
-                    match_ext = external_df[external_df['Title'].str.contains(major, case=False, na=False)].head(3)
-
-                    if not match_normal.empty:
-                        context_text = "\n\n".join([f"【{row['Title']}】\n{row['Content_For_AI']}" for _, row in match_normal.head(8).iterrows()])
+                        # 1. 内部数据匹配
+                        match_normal = normal_df[
+                            normal_df['Content_For_AI'].str.contains(major, case=False, na=False) | 
+                            normal_df['Title'].str.contains(major, case=False, na=False)
+                        ].head(8)
                         
+                        # 2. 外部链接模糊比对
+                        # 简单逻辑：提取包含专业关键词的外部链接
+                        match_ext = external_df[
+                            external_df['Title'].str.contains(major, case=False, na=False)
+                        ].head(3)
+
+                        if match_normal.empty:
+                            match_normal = normal_df[normal_df['Content_For_AI'].str.contains("International", case=False, na=False)].head(5)
+
+                        # --- 构造 Prompt (全英文指令确保 AI 逻辑稳定) ---
+                        prompt_lang = "Chinese" if curr_l == 'Chinese' else "English"
+                        
+                        system_prompt = f"""
+                        You are a professional UWA Scholarship Consultant.
+                        Your goal is to provide a rigorous and honest assessment based on provided data.
+
+                        CRITICAL INSTRUCTIONS:
+                        1. LANGUAGE: Output EVERYTHING in {prompt_lang}.
+                        2. ELIGIBILITY CHECK: Be strict. If the user's GPA or background clearly does NOT meet the requirements in the data, explicitly state "Qualifications Not Met" for that specific item and explain why.
+                        3. STRUCTURE:
+                           - # [Recommended Scholarships]: List 1-3 specific names if they fit. If none fit, state clearly.
+                           - # [Detailed Analysis]: Analyze Eligibility vs User Profile.
+                           - # [Final Verdict]: Give a "High/Medium/Low" match score and reason.
+                        4. HONESTY: Do not encourage the user if their background is insufficient. Give realistic advice.
+                        """
+
+                        context_text = "\n\n".join([f"TITLE: {row['Title']}\nCONTENT: {row['Content_For_AI']}" for _, row in match_normal.iterrows()])
+
                         try:
                             response = client.chat.completions.create(
                                 model="deepseek-chat",
                                 messages=[
-                                    {"role": "system", "content": "你是一位专业的西澳大学奖学金顾问。请根据资料给出针对性建议。"},
-                                    {"role": "user", "content": f"背景: {level}, 专业: {major}, 国际生: {is_intl}。补充: {user_query}\n\n参考资料:\n{context_text}"}
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": f"User Background: {level}, Major: {major}, Intl: {is_intl}. Extra Info: {user_query}\n\nScholarship Data:\n{context_text}"}
                                 ]
                             )
-                            st.markdown("### ✨ AI 智能分析报告")
+                            
+                            st.markdown(f"### ✨ {'Analysis Report' if curr_l == 'English' else '分析报告'}")
                             st.markdown(response.choices[0].message.content)
                             
+                            # --- 外部链接区 (模糊比对输出) ---
                             st.divider()
-                            st.markdown("#### 📚 参考原文清单")
+                            ext_title = "🔗 External/Special Links" if curr_l == 'English' else "🔗 外部/特殊相关链接"
+                            st.markdown(f"#### {ext_title}")
+                            
+                            if not match_ext.empty:
+                                st.info("The following external links match your major keywords. Please check manually:" if curr_l == 'English' else "以下外部链接与您的专业关键词匹配，请手动核对：")
+                                for _, row in match_ext.iterrows():
+                                    st.markdown(f"- **[{row['Title']}]({row['Link']})**")
+                            else:
+                                no_ext_msg = "No specific external links matched your major today." if curr_l == 'English' else "今日暂无与您专业直接相关的外部特殊链接。"
+                                st.write(no_ext_msg)
+
+                            # --- 参考原文 ---
+                            st.divider()
+                            st.markdown(f"#### 📚 {'Reference Data' if curr_l == 'English' else '参考原文清单'}")
                             for _, row in match_normal.iterrows():
                                 with st.expander(f"📌 {row['Title']}"):
-                                    st.markdown(f"**🔗 链接:** [{row['Link']}]({row['Link']})")
+                                    st.markdown(f"**Link:** [{row['Link']}]({row['Link']})")
                                     st.code(row['Content_For_AI'], language="text")
+
                         except Exception as e:
-                            st.error(f"AI 调用失败: {e}")
-                    
-                    if not match_ext.empty:
-                        st.warning("🔗 发现可能相关的外部链接")
-                        for _, row in match_ext.iterrows():
-                            st.markdown(f"- **[{row['Title']}]({row['Link']})**")
+                            st.error(f"AI Error: {e}")
 
 # --- Tab 2: 全部索引 ---
 with tab2:
-    st.subheader("📋 UWA 奖学金数据库全清单/All Scholarships")
-    
-    # 顶部的搜索框
-    search_all = st.text_input("🔍 在全库中搜索 (如：Global, Master, Engineering...)", "")
-    
+    st.subheader("📋 Scholarship List / 奖学金全清单")
+    search_all = st.text_input("🔍 Search / 搜索", "")
     display_df = df.copy()
     if search_all:
-        display_df = display_df[
-            display_df['Title'].str.contains(search_all, case=False, na=False) |
-            display_df['Content_For_AI'].str.contains(search_all, case=False, na=False)
-        ]
-
-    # 使用 dataframe 展示，并配置链接列
-    st.dataframe(
-        display_df[['Title', 'Link', 'is_external']],
-        column_config={
-            "Title": "奖学金项目名称",
-            "Link": st.column_config.LinkColumn("详情链接"),
-            "is_external": "特殊链接"
-        },
-        use_container_width=True,
-        hide_index=True
-    )
+        display_df = display_df[display_df['Title'].str.contains(search_all, case=False, na=False)]
+    st.dataframe(display_df[['Title', 'Link', 'is_external']], use_container_width=True, hide_index=True)

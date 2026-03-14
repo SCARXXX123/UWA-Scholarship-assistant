@@ -15,7 +15,7 @@ else:
     SAVE_PATH = r"E:\pythonProject\For_fun\Scholarships_scraper\uwa_for_ai_analysis.csv"
 # --- 灵活控制变量 ---
 # None: 自动抓取全部 | 数字: 手动限制抓取页数
-USER_LIMIT = None
+USER_LIMIT = 2
 
 
 # ===========================================
@@ -76,8 +76,8 @@ def scrape_uwa_for_ai():
         )
         page = context.new_page()
 
-        # 禁止加载图片和字体，极致提速
-        page.route("**/*.{png,jpg,jpeg,svg,webp,gif,css,font}", lambda route: route.abort())
+        # # 禁止加载图片和字体，极致提速
+        # page.route("**/*.{png,jpg,jpeg,svg,webp,gif,css,font}", lambda route: route.abort())
 
         target_url = "https://www.search.uwa.edu.au/s/search.html?query=&collection=uowa~sp-scholarship&profile=scholarship"
         print(f"🌐 正在打开列表页...")

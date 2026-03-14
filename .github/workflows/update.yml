@@ -3,7 +3,7 @@ name: Daily Scraper Update
 on:
   schedule:
     - cron: '0 18 * * *'  # 每天北京时间凌晨 2 点运行 (UTC 18:00)
-  workflow_dispatch:      # 允许你在 GitHub 页面手动点击运行进行测试
+  workflow_dispatch:      # 允许手动触发测试
 
 jobs:
   scrape:
@@ -17,18 +17,26 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install system dependencies
+        # 这是为了确保 Playwright 在 GitHub 的 Ubuntu 环境下能跑起来
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgbm1 libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2
+
+      - name: Install Python dependencies
         run: |
           pip install playwright pandas fake-useragent openai
           playwright install chromium
 
       - name: Run Scraper
-        run: python Scraper_for_UWA.py  # 确保你的爬虫文件名是 scraper.py
+        # 已经根据你的文件名修改
+        run: python Scraper_for_UWA.py
 
       - name: Commit and Push changes
         run: |
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "actions@github.com"
+          # 确保文件名和你爬虫导出的 CSV 文件名一致
           git add uwa_for_ai_analysis.csv
           git commit -m "Auto-update scholarship data" || exit 0
           git push

@@ -36,34 +36,51 @@ def get_total_pages(page):
 
 def get_ai_ready_content(detail_page):
     """
-    基于 UWA 官网结构提取详情，若结构不符则安全退出
+    针对 UWA 栅格系统优化的提取逻辑
     """
     try:
-        # 针对 UWA 标准页面，最多等 5 秒，找不到说明结构不对
+        # 确保页面标题加载完成
         detail_page.wait_for_selector('h1._title', timeout=5000)
         title = detail_page.inner_text('h1._title').strip()
 
-        # 1. 提取 Info Bar
+        # 1. 提取顶部 Info Bar (Status, Value, etc.)
         info_items = []
-        for li in detail_page.query_selector_all('ul.bsp_scholarship-info li'):
-            h = li.query_selector('.bsp_scholarship-info-heading')
-            a = li.query_selector('.bsp_scholarship-info-actual')
-            if h and a:
-                info_items.append(f"{h.inner_text().strip()}: {a.inner_text().strip()}")
+        info_list = detail_page.query_selector('ul.bsp_scholarship-info')
+        if info_list:
+            for li in info_list.query_selector_all('li'):
+                h = li.query_selector('.bsp_scholarship-info-heading')
+                a = li.query_selector('.bsp_scholarship-info-actual')
+                if h and a:
+                    info_items.append(f"{h.inner_text().strip()}: {a.inner_text().strip()}")
 
-        # 2. 提取正文 Section
+        # 2. 提取主体 Section (Eligibility, Benefits, etc.)
         sections = []
+        # 遍历所有包含模块内容的容器
         for block in detail_page.query_selector_all('.module-container'):
-            h2 = block.query_selector('h2')
-            content = block.query_selector('.columns')
-            if h2 and content:
-                sections.append(f"[{h2.inner_text().strip()}]\n{content.inner_text().strip()}")
+            # 定位左侧标题 (h2)
+            h2_el = block.query_selector('h2')
+            # 定位右侧内容区域 (明确寻找 medium-8)
+            content_el = block.query_selector('.medium-8.large-8.columns')
 
-        combined = f"TITLE: {title}\nINFO: {' | '.join(info_items)}\n\n" + "\n\n".join(sections)
-        return re.sub(r'[ \t]+', ' ', combined).strip()
-    except:
-        # 这里的异常通常意味着进入了 UWA 的非标准页面或重定向页
-        return "SPECIAL_STRUCTURE | 页面结构非标准，请通过链接查看"
+            if h2_el and content_el:
+                header_text = h2_el.inner_text().strip()
+                body_text = content_el.inner_text().strip()
+                sections.append(f"[{header_text}]\n{body_text}")
+
+        # 3. 补充处理：有些页面顶部的简介不在 module-container 的 h2 结构里
+        intro_p = detail_page.query_selector('.bsp_scholarship-main-section p')
+        intro_text = f"[Overview]\n{intro_p.inner_text().strip()}" if intro_p else ""
+
+        # 组合最终结果
+        info_str = " | ".join(info_items)
+        main_body = "\n\n".join(sections)
+
+        combined = f"TITLE: {title}\nINFO: {info_str}\n\n{intro_text}\n\n{main_body}"
+
+        # 清理多余空格
+        return re.sub(r'\n{3,}', '\n\n', combined).strip()
+    except Exception as e:
+        return f"SPECIAL_STRUCTURE | 解析失败: {str(e)}"
 
 
 def scrape_uwa_for_ai():

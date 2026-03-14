@@ -1,169 +1,18 @@
-# import os, time, csv, random, re, math
-# from playwright.sync_api import sync_playwright
-# from fake_useragent import UserAgent
-# from urllib.parse import urlparse, parse_qs, unquote
-#
-# # ================= 配置区域 =================
-# BROWSER_FOLDER = r"E:\pythonProject\For_fun\Scholarships_scraper\pw-browsers"
-# os.environ["PLAYWRIGHT_BROWSERS_PATH"] = BROWSER_FOLDER
-# SAVE_PATH = r"E:\pythonProject\For_fun\Scholarships_scraper\uwa_for_ai_analysis.csv"
-#
-# # --- 灵活控制变量 ---
-# # None: 自动抓取全部  | 数字: 手动限制抓取页数
-# USER_LIMIT = 2
-#
-#
-# # ===========================================
-#
-# def get_total_pages(page):
-#     """
-#     利用你提供的 search-total-matching ID 精准计算页数
-#     """
-#     try:
-#         # 显式等待总数数字出现
-#         page.wait_for_selector('#search-total-matching', timeout=5000)
-#         total_text = page.inner_text('#search-total-matching').replace(',', '').strip()
-#         total_results = int(total_text)
-#
-#         # UWA 默认每页 10 条结果
-#         pages = math.ceil(total_results / 10)
-#         print(f"📊 检测到总结果数: {total_results}，自动计算总页数为: {pages}")
-#         return pages
-#     except Exception as e:
-#         print(f"⚠️ 无法通过 ID 解析，尝试兜底逻辑... ({e})")
-#         return 1
-#
-#
-# def get_ai_ready_content(detail_page):
-#     """
-#     基于结构提取详情
-#     """
-#     try:
-#         detail_page.wait_for_selector('h1._title', timeout=10000)
-#         title = detail_page.inner_text('h1._title').strip()
-#
-#         # 1. 提取 Info Bar
-#         info_items = []
-#         for li in detail_page.query_selector_all('ul.bsp_scholarship-info li'):
-#             h = li.query_selector('.bsp_scholarship-info-heading')
-#             a = li.query_selector('.bsp_scholarship-info-actual')
-#             if h and a:
-#                 info_items.append(f"{h.inner_text().strip()}: {a.inner_text().strip()}")
-#
-#         # 2. 提取正文 Section (Eligibility, Benefits)
-#         sections = []
-#         for block in detail_page.query_selector_all('.module-container'):
-#             h2 = block.query_selector('h2')
-#             content = block.query_selector('.columns')
-#             if h2 and content:
-#                 sections.append(f"[{h2.inner_text().strip()}]\n{content.inner_text().strip()}")
-#
-#         combined = f"TITLE: {title}\nINFO: {' | '.join(info_items)}\n\n" + "\n\n".join(sections)
-#         return re.sub(r'[ \t]+', ' ', combined).strip()
-#     except:
-#         return "Extraction Failed"
-#
-#
-# def scrape_uwa_for_ai():
-#     with sync_playwright() as p:
-#         print("🚀 启动无头浏览器（后台运行中...）")
-#
-#         # 1. 设置 headless=True 开启无头模式
-#         browser = p.chromium.launch(headless=True)
-#
-#         # 2. 模拟标准桌面浏览器配置
-#         context = browser.new_context(
-#             user_agent=UserAgent().random,
-#             viewport={'width': 1920, 'height': 1080}  # 模拟全屏显示器
-#         )
-#
-#         page = context.new_page()
-#
-#         # 3. [可选优化]：禁止加载图片，省流量且提速
-#         page.route("**/*.{png,jpg,jpeg,svg,webp,gif}", lambda route: route.abort())
-#         page.route("**/fonts/**", lambda route: route.abort())
-#
-#         target_url = "https://www.search.uwa.edu.au/s/search.html?query=&collection=uowa~sp-scholarship&profile=scholarship"
-#         print(f"🌐 正在打开列表页...")
-#         page.goto(target_url, wait_until="domcontentloaded")
-#
-#         # --- 核心改进：获取总页数 ---
-#         total_pages = get_total_pages(page)
-#
-#         # 确定最终爬取页数
-#         if USER_LIMIT is not None:
-#             final_pages = min(USER_LIMIT, total_pages)
-#             print(f"⚙️ 手动模式: 抓取前 {final_pages} 页")
-#         else:
-#             final_pages = total_pages
-#             print(f"🚀 全量模式: 准备抓取全部 {final_pages} 页")
-#
-#         items_to_process = []
-#         # 阶段 1：扫列表
-#         for current_p in range(1, final_pages + 1):
-#             print(f"📖 扫描列表页 {current_p}/{final_pages}...")
-#             page.wait_for_selector('h4 a', timeout=10000)
-#
-#             for link_el in page.query_selector_all('h4 a'):
-#                 # 过滤并提取真实 URL
-#                 href = link_el.get_attribute('href')
-#                 if href and "scholarship" in href.lower():
-#                     items_to_process.append({
-#                         'Title': link_el.inner_text().strip(),
-#                         'Link': unquote(href.split('url=')[-1].split('&')[0]) if 'url=' in href else href
-#                     })
-#
-#             # 翻页逻辑
-#             if current_p < final_pages:
-#                 next_btn = page.query_selector('a[rel="next"]')
-#                 if next_btn:
-#                     next_btn.click()
-#                     time.sleep(random.uniform(1, 2))
-#                 else:
-#                     break
-#
-#         # 阶段 2：深挖内容
-#         print(f"🔗 链接采集完成，共 {len(items_to_process)} 条。开始解析...")
-#         results = []
-#         for i, item in enumerate(items_to_process, 1):
-#             dp = context.new_page()
-#             try:
-#                 print(f"   🔍 [{i}/{len(items_to_process)}] {item['Title']}")
-#                 dp.goto(item['Link'], wait_until="domcontentloaded", timeout=20000)
-#                 item['Content_For_AI'] = get_ai_ready_content(dp)
-#                 results.append(item)
-#             except:
-#                 item['Content_For_AI'] = "Load Failed"
-#                 results.append(item)
-#             finally:
-#                 dp.close()
-#             time.sleep(random.uniform(0.3, 0.7))
-#
-#         # 阶段 3：保存
-#         if results:
-#             with open(SAVE_PATH, 'w', newline='', encoding='utf-8-sig') as f:
-#                 writer = csv.DictWriter(f, fieldnames=['Title', 'Link', 'Content_For_AI'])
-#                 writer.writeheader()
-#                 writer.writerows(results)
-#             print(f"✨ 大功告成！文件保存至: {SAVE_PATH}")
-#
-#         browser.close()
-#
-#
-# if __name__ == "__main__":
-#     scrape_uwa_for_ai()
-
-
 import os, time, csv, random, re, math
 from playwright.sync_api import sync_playwright
 from fake_useragent import UserAgent
 from urllib.parse import urlparse, parse_qs, unquote
-
 # ================= 配置区域 =================
-BROWSER_FOLDER = r"E:\pythonProject\For_fun\Scholarships_scraper\pw-browsers"
-os.environ["PLAYWRIGHT_BROWSERS_PATH"] = BROWSER_FOLDER
-SAVE_PATH = r"E:\pythonProject\For_fun\Scholarships_scraper\uwa_for_ai_analysis.csv"
-
+# 自动识别环境：如果是 GitHub Actions 环境，就不设置特殊的浏览器路径
+if os.environ.get("GITHUB_ACTIONS") == "true":
+    print("🤖 检测到 GitHub Actions 环境，使用系统默认浏览器路径")
+    SAVE_PATH = "uwa_for_ai_analysis.csv"  # 云端直接保存在根目录
+else:
+    # 本地开发环境配置
+    print("💻 检测到本地环境")
+    BROWSER_FOLDER = r"E:\pythonProject\For_fun\Scholarships_scraper\pw-browsers"
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = BROWSER_FOLDER
+    SAVE_PATH = r"E:\pythonProject\For_fun\Scholarships_scraper\uwa_for_ai_analysis.csv"
 # --- 灵活控制变量 ---
 # None: 自动抓取全部 | 数字: 手动限制抓取页数
 USER_LIMIT = None

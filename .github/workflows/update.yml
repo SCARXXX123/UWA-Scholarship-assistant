@@ -28,7 +28,7 @@ jobs:
           pip install playwright pandas fake-useragent openai
           playwright install chromium
 
-      - name: Run Scraper_for_UWA
+      - name: Run Scraper
         # 已经根据你的文件名修改
         run: python Scraper_for_UWA.py
 

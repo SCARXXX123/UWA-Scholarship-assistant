@@ -40,7 +40,7 @@ I18N = {
             "准本科生 - 高中升大学 (Future Undergraduate)", 
             "在读本科生 (Current Undergraduate)", 
             "准授课研究生 - 本科升研 (Future Course Postgraduate)", 
-            "准研究型硕士/博士" (Future Research Master/Mphil/PHD),
+            "准研究型硕士/博士 (Future Research Master/Mphil/PHD)",
             "在读授课研究生 (Current Course Postgraduate)", 
             "在读高等学位研究 - 博士/研究型硕士 (Current PhD/Research/Mphil)"
         ],

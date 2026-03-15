@@ -72,7 +72,7 @@ with tab1:
         st.subheader(texts["sub_bg"])
         level = st.selectbox(texts["lbl_level"], ["Undergraduate", "Postgraduate", "HDR"])
         faculty = st.text_input(texts["lbl_faculty"], placeholder="e.g. Engineering")
-        major = st.text_input(texts["lbl_major"], value="Information Technology")
+        major = st.text_input(texts["lbl_major"], placeholder="Information Technology")
         intl_status = st.radio(texts["lbl_intl"], ["International Student", "Domestic Student"], index=0)
         user_query = st.text_area(texts["lbl_extra"], height=280)
         run_btn = st.button(texts["btn_run"], type="primary", use_container_width=True)
@@ -81,7 +81,6 @@ with tab1:
         result_container = st.empty()
         if run_btn:
             with result_container.container():
-                    # --- 【真正的全量放权：拒绝抽样】 ---
                     with st.spinner(texts["scanning"]):
                         # 1. 提取全量数据
                         # 如果你的 CSV 很大（上千行），AI 处理会慢；但如果是 UWA 这种几百行的，直接梭哈！
@@ -101,12 +100,14 @@ with tab1:
                         你的用户身份是：{intl_status}，学历：{level}，学院：{faculty}，专业：{major}。
                         
                         你的核心任务：
-                        1. 优先搜索不限制专业学院的奖学金：忽略名字里的限制，优先看内容是否提到 "all disciplines" 或 "International Student Award"。绝对不能因为用户填了{major}和{faculty}就忽略掉这些普适性大奖。
+                        1. 优先搜索不限制专业，学院，学习阶段的奖学金：忽略名字里的限制，优先看内容是否提到 "all disciplines" 或 "International Student Award"。绝对不能因为用户填了{major}和{faculty}就忽略掉这些普适性大奖。
                         2. 根据用户给出的{faculty}和{major}寻找有无专门给这个专业或学院的学生的奖学金。
                         3. 外部链接模糊比对：对于标记为 'External Link Only' 的项目，即便没有详情，也要根据标题进行联想。例如标题带 'Engineering'，而用户专业是 {major}，则必须告知用户：“这个链接看起来高度相关，建议官网确认。”
                         4. 针对高GPA的关怀：如果用户提到 GPA/WAM > 80，必须主动提及 UWA 经典的 "Global Excellence Scholarship"，解释其自动发放的机制。
                         5. 区分“当下申请”与“未来关注”：Close 的项目也要查询，只要符合要求就列出，作为明年或下学期的目标。
                         6. 诚实告知不符项：若无完全匹配，解释是因为身份、学历还是专业限制。
+                        7.看用户是否为国际学生，如果是国际学生，则自动过滤只给澳洲国内学生的奖学金；反之亦然。
+                        8.根据用户选择的学习阶段来匹配合适的。
                         
                         输出模版：
                         🔥 **核心匹配结果 (The Verdict)** - 符合就推，不符合就直说，别磨叽。

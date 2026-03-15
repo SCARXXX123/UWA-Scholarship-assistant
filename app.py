@@ -27,28 +27,60 @@ def load_data(week_key):
 # ================= 3. 语言包 =================
 I18N = {
     "Chinese": {
-        "nav_sidebar": "⚙️ 系统设置", "lang_btn": "Switch to English",
-        "sync_week": "📅 同步周期", "last_update": "📄 数据更新于",
-        "main_title": "🎓 UWA 奖学金智能助手", "tab_match": "🔍 AI 智能分析",
-        "tab_index": "🌐 数据索引", "sub_bg": "👤 个人背景信息",
-        "lbl_level": "学习阶段", "lbl_faculty": "所属学院 (Faculty/School)",
-        "lbl_major": "专业关键词 (Major)", "lbl_intl": "身份类型",
-        "lbl_extra": "其他背景/GPA/经历", "btn_run": "🔥 开启全库智能扫描",
-        "scanning": "🤖 正在检索并思考匹配方案...",
-        "db_title": "📋 奖学金数据库", "search_db": "搜索...",
-        "model_sel": "选择 AI 大脑", "model_help": "reasoner 模型（R1）适合处理复杂的逻辑匹配"
+        "nav_sidebar": "⚙️ 系统设置", 
+        "lang_btn": "Switch to English",
+        "sync_week": "📅 同步周期", 
+        "last_update": "📄 数据更新于",
+        "main_title": "🎓 UWA 奖学金智能助手", 
+        "tab_match": "🔍 AI 智能分析",
+        "tab_index": "🌐 数据索引", 
+        "sub_bg": "👤 个人背景信息",
+        "lbl_level": "当前身份 (Student Status)", 
+        "level_opts": [
+            "准本科生 - 高中升大学 (Future Undergraduate)", 
+            "在读本科生 (Current Undergraduate)", 
+            "准研究生 - 本科升研 (Future Postgraduate)", 
+            "在读研究生 (Current Postgraduate)", 
+            "高等学位研究 - 博士/研入 (HDR - PhD/Research)"
+        ],
+        "lbl_faculty": "所属学院 (Faculty/School)", 
+        "lbl_major": "专业关键词 (Major)", 
+        "lbl_intl": "身份类型",
+        "lbl_extra": "其他背景/GPA/经历", 
+        "btn_run": "🔥 开启全库智能扫描",
+        "scanning": "🤖 正在检索并深度思考匹配方案...",
+        "db_title": "📋 奖学金数据库", 
+        "search_db": "搜索...",
+        "model_sel": "选择 AI 大脑", 
+        "model_help": "reasoner 模型（R1）更擅长处理复杂的入学资格逻辑"
     },
     "English": {
-        "nav_sidebar": "⚙️ Settings", "lang_btn": "切换至中文",
-        "sync_week": "📅 Sync Week", "last_update": "📄 Last Updated",
-        "main_title": "🎓 UWA Scholarship AI", "tab_match": "🔍 AI Analysis",
-        "tab_index": "🌐 Data Index", "sub_bg": "👤 Profile",
-        "lbl_level": "Level", "lbl_faculty": "Faculty/School",
-        "lbl_major": "Major", "lbl_intl": "Residency",
-        "lbl_extra": "Extra (GPA, Awards, etc.)", "btn_run": "🔥 Run Deep AI Scan",
+        "nav_sidebar": "⚙️ Settings", 
+        "lang_btn": "切换至中文",
+        "sync_week": "📅 Sync Week", 
+        "last_update": "📄 Last Updated",
+        "main_title": "🎓 UWA Scholarship AI", 
+        "tab_match": "🔍 AI Analysis",
+        "tab_index": "🌐 Data Index", 
+        "sub_bg": "👤 Profile",
+        "lbl_level": "Student Status", 
+        "level_opts": [
+            "Future Student - Undergraduate (Commencing)", 
+            "Current Undergraduate Student", 
+            "Future Student - Postgraduate (Commencing)", 
+            "Current Postgraduate Student", 
+            "Higher Degree by Research (HDR)"
+        ],
+        "lbl_faculty": "Faculty/School", 
+        "lbl_major": "Major", 
+        "lbl_intl": "Residency",
+        "lbl_extra": "Extra (GPA, Awards, etc.)", 
+        "btn_run": "🔥 Run Deep AI Scan",
         "scanning": "🤖 Thinking and matching scholarships...",
-        "db_title": "📋 Database", "search_db": "Search...",
-        "model_sel": "AI Model", "model_help": "Reasoner model (R1) is better for complex logical matching"
+        "db_title": "📋 Database", 
+        "search_db": "Search...",
+        "model_sel": "AI Model", 
+        "model_help": "Reasoner model (R1) is better for complex eligibility logic"
     }
 }
 
@@ -85,7 +117,7 @@ with tab1:
     col_input, col_res = st.columns([1, 1.5])
     with col_input:
         st.subheader(texts["sub_bg"])
-        level = st.selectbox(texts["lbl_level"], ["Undergraduate", "Postgraduate", "HDR"])
+        level = st.selectbox(texts["lbl_level"], texts["level_opts"])
         faculty = st.text_input(texts["lbl_faculty"], placeholder="e.g. Engineering")
         major = st.text_input(texts["lbl_major"], placeholder="Information Technology")
         intl_status = st.radio(texts["lbl_intl"], ["International Student", "Domestic Student"], index=0)

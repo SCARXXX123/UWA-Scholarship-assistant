@@ -6,8 +6,6 @@ import datetime
 
 # ================= 1. AI 配置 =================
 api_key = st.secrets.get("DEEPSEEK_API_KEY") or os.environ.get('DEEPSEEK_API_KEY')
-if not api_key:
-    api_key = "sk-9b3837671dbd4f159ab69e86138753ba"
 
 client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 

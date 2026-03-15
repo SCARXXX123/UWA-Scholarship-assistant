@@ -41,7 +41,7 @@ I18N = {
             "在读本科生 (Current Undergraduate)", 
             "准研究生 - 本科升研 (Future Postgraduate)", 
             "在读研究生 (Current Postgraduate)", 
-            "高等学位研究 - 博士/研入 (HDR - PhD/Research)"
+            "高等学位研究 - 博士/研究型硕士 (HDR - PhD/Research/Mphil)"
         ],
         "lbl_faculty": "所属学院 (Faculty/School)", 
         "lbl_major": "专业关键词 (Major)", 

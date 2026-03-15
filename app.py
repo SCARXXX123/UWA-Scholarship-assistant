@@ -39,9 +39,10 @@ I18N = {
         "level_opts": [
             "准本科生 - 高中升大学 (Future Undergraduate)", 
             "在读本科生 (Current Undergraduate)", 
-            "准研究生 - 本科升研 (Future Postgraduate)", 
-            "在读研究生 (Current Postgraduate)", 
-            "高等学位研究 - 博士/研究型硕士 (HDR - PhD/Research/Mphil)"
+            "准授课研究生 - 本科升研 (Future Course Postgraduate)", 
+            "准研究型硕士/博士" (Future Research Master/Mphil/PHD),
+            "在读授课研究生 (Current Course Postgraduate)", 
+            "在读高等学位研究 - 博士/研究型硕士 (Current PhD/Research/Mphil)"
         ],
         "lbl_faculty": "所属学院 (Faculty/School)", 
         "lbl_major": "专业关键词 (Major)", 
@@ -67,9 +68,10 @@ I18N = {
         "level_opts": [
             "Future Student - Undergraduate (Commencing)", 
             "Current Undergraduate Student", 
-            "Future Student - Postgraduate (Commencing)", 
-            "Current Postgraduate Student", 
-            "Higher Degree by Research (HDR)"
+            "Future Student - Course Postgraduate (Commencing)", 
+            "Future Student - Research Postgraduate (Commencing Research/Mphil/PHD)", 
+            "Current Course Postgraduate Student", 
+            "Higher Degree by Research (Research/Mphil/PHD)"
         ],
         "lbl_faculty": "Faculty/School", 
         "lbl_major": "Major", 
